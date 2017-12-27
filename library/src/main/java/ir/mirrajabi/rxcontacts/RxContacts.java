@@ -79,40 +79,49 @@ public class RxContacts {
             return;
         }
         cursor.moveToFirst();
-        int idColumnIndex = cursor.getColumnIndex(ContactsContract.Data.CONTACT_ID);
-        int inVisibleGroupColumnIndex = cursor.getColumnIndex(ContactsContract.Data.IN_VISIBLE_GROUP);
-        int displayNamePrimaryColumnIndex = cursor.getColumnIndex(ContactsContract.Data.DISPLAY_NAME_PRIMARY);
-        int starredColumnIndex = cursor.getColumnIndex(ContactsContract.Data.STARRED);
-        int photoColumnIndex = cursor.getColumnIndex(ContactsContract.Data.PHOTO_URI);
-        int thumbnailColumnIndex = cursor.getColumnIndex(ContactsContract.Data.PHOTO_THUMBNAIL_URI);
-        int mimetypeColumnIndex = cursor.getColumnIndex(ContactsContract.Data.MIMETYPE);
-        int dataColumnIndex = cursor.getColumnIndex(ContactsContract.Data.DATA1);
+        // Get the column indexes
+        int idxId = cursor.getColumnIndex(ContactsContract.Data.CONTACT_ID);
+        int idxInVisibleGroup = cursor.getColumnIndex(ContactsContract.Data.IN_VISIBLE_GROUP);
+        int idxDisplayNamePrimary = cursor.getColumnIndex(ContactsContract.Data.DISPLAY_NAME_PRIMARY);
+        int idxStarred = cursor.getColumnIndex(ContactsContract.Data.STARRED);
+        int idxPhoto = cursor.getColumnIndex(ContactsContract.Data.PHOTO_URI);
+        int idxThumbnail = cursor.getColumnIndex(ContactsContract.Data.PHOTO_THUMBNAIL_URI);
+        int idxMimetype = cursor.getColumnIndex(ContactsContract.Data.MIMETYPE);
+        int idxData1 = cursor.getColumnIndex(ContactsContract.Data.DATA1);
+        // Map the columns to the fields of the contact
         while (!cursor.isAfterLast()) {
-            long id = cursor.getLong(idColumnIndex);
+            // Get the id and the contact for this id. The contact may be a null.
+            long id = cursor.getLong(idxId);
             Contact contact = contacts.get(id, null);
             if (contact == null) {
+                // Create a new contact
                 contact = new Contact(id);
-                mapInVisibleGroup(cursor, contact, inVisibleGroupColumnIndex);
-                mapDisplayName(cursor, contact, displayNamePrimaryColumnIndex);
-                mapStarred(cursor, contact, starredColumnIndex);
-                mapPhoto(cursor, contact, photoColumnIndex);
-                mapThumbnail(cursor, contact, thumbnailColumnIndex);
+                // Map the non collection attributes
+                mapInVisibleGroup(cursor, contact, idxInVisibleGroup);
+                mapDisplayName(cursor, contact, idxDisplayNamePrimary);
+                mapStarred(cursor, contact, idxStarred);
+                mapPhoto(cursor, contact, idxPhoto);
+                mapThumbnail(cursor, contact, idxThumbnail);
+                // Add the contact to the collection
                 contacts.put(id, contact);
-            } else {
-                String mimetype = cursor.getString(mimetypeColumnIndex);
-                switch (mimetype) {
-                    case ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE: {
-                        mapEmail(cursor, contact, dataColumnIndex);
-                        break;
-                    }
-                    case ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE: {
-                        mapPhoneNumber(cursor, contact, dataColumnIndex);
-                        break;
-                    }
+            }
+
+            // map phone number or email address
+            String mimetype = cursor.getString(idxMimetype);
+            switch (mimetype) {
+                case ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE: {
+                    mapEmail(cursor, contact, idxData1);
+                    break;
+                }
+                case ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE: {
+                    mapPhoneNumber(cursor, contact, idxData1);
+                    break;
                 }
             }
+
             cursor.moveToNext();
         }
+
         cursor.close();
         for (int i = 0; i < contacts.size(); i++)
             emitter.onNext(contacts.valueAt(i));
