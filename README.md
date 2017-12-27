@@ -12,7 +12,7 @@ repositories {
 Then add the dependency in modules build.gradle file
 ```gradle
 dependencies {
-    compile 'com.github.tougee:rx-contacts2:1.0'
+    compile 'com.github.tougee:rx-contacts2:1.1'
 }
 ```
 
